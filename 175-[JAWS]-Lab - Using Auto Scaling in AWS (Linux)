@@ -1,0 +1,114 @@
+175-[JAWS]-Lab - Using Auto Scaling in AWS (Linux)
+Using Auto Scaling in AWS (Linux)
+This document outlines the steps and objectives of a lab focused on using the AWS Command Line Interface (CLI) to create and configure an Amazon EC2 instance, an Amazon Machine Image (AMI), an Elastic Load Balancer, and an Auto Scaling group to manage a web server under variable load. The lab is designed to take approximately 45 minutes.
+Lab Overview
+In this lab, you will:
+
+Use the AWS CLI to create an Amazon EC2 instance hosting a web server.
+Create an Amazon Machine Image (AMI) from the EC2 instance.
+Configure an Auto Scaling group to dynamically scale the number of servers based on load.
+Set up an Elastic Load Balancer to distribute traffic across EC2 instances in multiple Availability Zones.
+
+Objectives
+
+Create an EC2 instance using AWS CLI commands.
+Create an Auto Scaling group that scales in and out based on variable load.
+
+Starting Architecture
+The lab begins with a Command Host instance preconfigured with the AWS CLI in the us-west-2 region. You will launch an EC2 instance, create an AMI, and configure Auto Scaling with an Elastic Load Balancer.
+Lab Tasks
+Task 1: Setting Up the EC2 Instance
+Task 1.2: Configuring the AWS CLI
+
+Verify the AWS CLI is configured for the us-west-2 region by running:aws configure get region
+
+
+
+Task 1.3: Launching an EC2 Instance
+
+Launch an EC2 instance using the following command, replacing placeholders with appropriate values:aws ec2 run-instances \
+    --key-name KEYNAME \
+    --instance-type t3.micro \
+    --image-id us-east-1.demec2.ami \
+    --security-group-ids sg-ABCDEF \
+    --subnet-id subnet-12345678 \
+    --associate-public-ip-address \
+    --output text \
+    --query 'Instances[0].InstanceId'
+
+
+Save the output INSTANCEID as NEWINSTANCEID for later use.
+Monitor the instance status:aws ec2 wait instance-running --instance-ids NEWINSTANCEID
+
+
+Obtain the public DNS name:aws ec2 describe-instances \
+    --instance-ids NEWINSTANCEID \
+    --query 'Reservations[0].Instances[0].PublicDnsName' \
+    --output text
+
+
+Save the output as PUBLIC-DNS-ADDRESS.
+Test the web server by accessing https://PUBLIC-DNS-ADDRESS:80/index.php in a browser. Wait 5 minutes if the server is not yet available.
+
+Task 1.4: Creating a Custom AMI
+
+Create an AMI from the EC2 instance:aws ec2 create-image \
+    --name WSERVER-AMI \
+    --instance-id NEWINSTANCEID
+
+Note: The instance may restart to ensure file system integrity during AMI creation.
+
+Task 2: Creating an Auto Scaling Environment
+Task 2.1: Configuring the Elastic Load Balancer
+
+In the AWS Management Console, navigate to the EC2 service and select Load Balancers.
+Create a target group:
+Choose Instances as the target type.
+Set Target group name to webserver-app.
+Set Health check path to /index.php.
+Create the target group.
+
+
+
+Task 2.2: Creating a Launch Template
+
+In the EC2 console, create a launch template:
+Select the HTTPAccess security group.
+Create the launch template named web-app-launch-template.
+
+
+
+Task 2.3: Creating an Auto Scaling Group
+
+From the launch template, create an Auto Scaling group:
+Name: web_app_auto_scaling_group.
+Network: Select Lab VPC and Private Subnet 1 (10.0.2.0/24) and Private Subnet 2 (10.0.4.0/24).
+Load Balancing: Attach to the webserver-app target group and enable Elastic Load Balancing health checks.
+Group Size:
+Desired capacity: 2
+Minimum capacity: 2
+Maximum capacity: 2
+
+
+Scaling Policy: Use a target tracking scaling policy with Average CPU utilization set to 50%.
+
+
+
+Task 4: Testing the Auto Scaling Configuration
+
+Access the load balancer’s DNS name in a browser and select Start Stress to simulate high CPU usage.
+In the EC2 console, navigate to Auto Scaling Groups, select web_app_auto_scaling_group, and check the Activity tab to verify that a new instance is added when CPU utilization exceeds 50%.
+Monitor new instances on the EC2 Dashboard.
+
+Conclusion
+You have successfully:
+
+Created an EC2 instance using AWS CLI.
+Generated a custom AMI.
+Configured a launch template and Auto Scaling group.
+Set up an Elastic Load Balancer to distribute traffic.
+Tested the Auto Scaling configuration under simulated load.
+
+Ending the Lab
+
+In the lab environment, select End Lab and confirm to terminate the lab resources.
