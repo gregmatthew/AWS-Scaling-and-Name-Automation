@@ -1,0 +1,171 @@
+174-[JAWS]-Lab - Scale and Load Balance your Architecture
+AWS Lab: Scale and Load Balance Your Architecture
+Lab Overview
+This lab guides you through using Elastic Load Balancing (ELB) and Amazon EC2 Auto Scaling to distribute incoming application traffic across multiple Amazon EC2 instances and automatically scale your infrastructure based on demand. The lab covers creating an Amazon Machine Image (AMI), setting up a load balancer, configuring a launch template and Auto Scaling group, scaling instances within private subnets, and monitoring performance with Amazon CloudWatch alarms.
+Duration: Approximately 45 minutes
+Objectives
+By the end of this lab, you will have:
+
+Created an AMI from an EC2 instance.
+Set up an Application Load Balancer.
+Created a launch template and an Auto Scaling group.
+Configured the Auto Scaling group to launch instances in private subnets.
+Used CloudWatch alarms to monitor and scale infrastructure based on performance metrics.
+
+Prerequisites
+
+Access to the AWS Management Console.
+A pre-configured Lab VPC with public and private subnets.
+A pre-existing Web Security Group permitting HTTP access.
+
+Accessing the AWS Management Console
+
+At the top of the lab instructions, choose Start Lab to launch the environment.
+Tip: If you need more time, select Start Lab again to restart the timer.
+
+
+Monitor the lab resources in the upper left corner:
+AWS indicates when resources are being created or ready.
+Wait for the "AWS resources are ready" pop-up before proceeding.
+
+
+
+Task 1: Creating an AMI
+
+In the AWS Management Console, navigate to the EC2 service.
+Select an existing EC2 instance to create an AMI.
+Follow the prompts to generate the AMI, which will be used later in the launch template.
+
+Task 2: Creating a Load Balancer
+In this task, you configure an Application Load Balancer to distribute traffic across multiple EC2 instances and Availability Zones.
+
+In the left navigation panel, under Load Balancing, select Load Balancers.
+Choose Create Load Balancer.
+In the Load Balancer Types section, for Application Load Balancer, select Create.
+On the Create Application Load Balancer page, configure:
+Load Balancer Name: Enter LABLB.
+VPC: Select Lab VPC.
+Mappings: Choose both listed Availability Zones.
+For the first Availability Zone, select Public Subnet 1.
+For the second Availability Zone, select Public Subnet 2.
+
+
+
+
+In the Security Groups section:
+Remove the default security group by selecting the X.
+From the dropdown, select Web Security Group (pre-configured for HTTP access).
+
+
+In the Listeners and Routing section:
+Select Create Target Group.
+On the Target Group page, configure:
+Target Type: Select Instances.
+Target Group Name: Enter lab-target-group.
+
+
+Choose Next, then Create Target Group on the Register Targets page.
+
+
+Return to the Load Balancer tab, refresh the Forward to dropdown, and select lab-target-group.
+Choose Create Load Balancer.
+After creation, you should see: Successfully created load balancer, LABLB.
+Select View Load Balancer and copy the DNS name of LABLB into a text editor for later use.
+
+Task 3: Creating a Launch Template
+In this task, you create a launch template to define the configuration for EC2 instances launched by the Auto Scaling group.
+
+In the AWS Management Console, search for EC2 and select it.
+In the left navigation pane, under Instances, select Launch Templates.
+Choose Create Launch Template.
+On the Create Launch Template page, in the Launch Template Name and Description section, configure:
+Launch Template Name: Enter a unique name.
+AMI: Select the AMI created in Task 1.
+Instance Type: Choose an appropriate instance type (e.g., t2.micro).
+Security Group: Select Web Security Group.
+
+
+Complete the configuration and create the launch template.
+
+Task 4: Creating an Auto Scaling Group
+In this task, you configure an Auto Scaling group to launch instances based on the launch template and attach it to the load balancer.
+
+Navigate to the EC2 service and select Auto Scaling Groups in the left navigation pane.
+Choose Create Auto Scaling Group.
+Configure the following:
+Launch Template: Select the template created in Task 3.
+VPC: Select Lab VPC.
+Subnets: Choose private subnets in both Availability Zones.
+
+
+On the Configure Advanced Options page:
+In the Load Balancing section, select Attach to an existing load balancer.
+Choose Choose from your load balancer target group.
+From the dropdown, select lab-target-group | HTTP.
+In the Health Checks section, set Health Check Type to ELB.
+
+
+On the Configure Group Size and Scaling Policies page:
+Group Size:
+Desired Capacity: 2
+Minimum Capacity: 2
+Maximum Capacity: 4
+
+
+Scaling Policies:
+Select Target Tracking Scaling Policy.
+Set the metric to CPU Utilization with a target value of 30%.
+This configures Auto Scaling to maintain an average CPU utilization of 30% across instances, adding or removing capacity as needed.
+
+
+
+
+On the Add Notifications page, skip by choosing Next.
+On the Add Tags page, add:
+Key: Name
+Value: Lab Instance
+
+
+Choose Create Auto Scaling Group.
+The group initially shows zero instances but will launch two instances to meet the desired capacity of 2.
+If you encounter an error related to the t2.micro instance type, rerun the configuration using an available instance type.
+
+
+
+Task 5: Verifying Load Balancing
+In this task, you verify that the load balancer and Auto Scaling group are functioning correctly.
+
+In the left navigation pane, under Instances, select Instances.
+Verify that two instances named Lab Instance are running, launched by the Auto Scaling group.
+If the instances are not displayed, wait 30 seconds and choose Refresh.
+
+
+Monitor the AlarmHigh and AlarmLow CloudWatch alarms:
+Within 5 minutes, AlarmLow should change to OK, and AlarmHigh should change to In Alarm if CPU utilization exceeds 50% for more than 3 minutes.
+Refresh the display every 60 seconds to update the alarm status.
+
+
+Once AlarmHigh is in the In Alarm state, check the Instances section again.
+More than two instances named Lab Instance should be running, indicating that Auto Scaling has added instances in response to the alarm.
+
+
+
+Task 6: Monitoring with CloudWatch Alarms
+
+In the AWS Management Console, search for CloudWatch and select it.
+Verify that the AlarmHigh alarm chart shows increasing CPU utilization.
+Confirm that Auto Scaling responds to the alarm by launching additional instances when CPU utilization exceeds 30% for the specified period.
+
+Conclusion
+Congratulations! You have successfully:
+
+Created an AMI from an EC2 instance.
+Configured an Application Load Balancer.
+Created a launch template and Auto Scaling group.
+Scaled instances within private subnets.
+Monitored infrastructure performance using CloudWatch alarms.
+
+Ending the Lab
+
+At the top of the lab page, choose End Lab and select Yes to confirm.
+A message, Ended AWS Lab Successfully, will confirm the lab has ended.
